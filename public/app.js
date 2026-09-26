@@ -609,6 +609,113 @@ function renderPlanResult() {
     <p class="hint">该规划仅为试算结果，原始批次与清洗记录未发生任何写入或修改。</p>`;
 }
 
+/* ================= 批次改期预览（只读试算） ================= */
+
+const rescheduleUI = {
+  batchId: '',
+  result: null,
+};
+
+function renderRescheduleParts() {
+  const sel = $('#reschedule-batch');
+  // 记录发生增删改后，清理已失效的选择与过期结果
+  if (rescheduleUI.batchId && !state.data.batches.some((b) => b.id === rescheduleUI.batchId)) {
+    rescheduleUI.batchId = '';
+  }
+  rescheduleUI.result = null;
+  const sorted = [...state.data.batches].sort((a, b) =>
+    a.time === b.time ? (a.id < b.id ? -1 : 1) : a.time < b.time ? -1 : 1
+  );
+  sel.innerHTML =
+    '<option value="">请选择批次…</option>' +
+    sorted
+      .map((b) =>
+        `<option value="${esc(b.id)}"${b.id === rescheduleUI.batchId ? ' selected' : ''}>${esc(b.name)}（${fmtTime(b.time)}）</option>`
+      )
+      .join('');
+  renderRescheduleResult();
+}
+
+$('#reschedule-batch').addEventListener('change', () => {
+  rescheduleUI.batchId = $('#reschedule-batch').value;
+  // 预填该批次当前时间，便于在此基础上调整
+  const b = state.data.batches.find((x) => x.id === rescheduleUI.batchId);
+  if (b) $('#reschedule-time').value = b.time;
+});
+
+$('#reschedule-reset').addEventListener('click', () => {
+  rescheduleUI.result = null;
+  renderRescheduleResult();
+});
+
+$('#reschedule-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  guard(async () => {
+    const batchId = $('#reschedule-batch').value;
+    const newTime = $('#reschedule-time').value;
+    if (!batchId) throw new Error('请选择要改期的批次');
+    if (!newTime) throw new Error('请输入新的批次时间');
+    const { preview } = await api('POST', '/api/reschedule-preview', { batchId, newTime });
+    rescheduleUI.result = preview;
+    renderRescheduleResult();
+  });
+});
+
+function renderRescheduleResult() {
+  const wrap = $('#reschedule-result');
+  const p = rescheduleUI.result;
+  if (!p) {
+    wrap.className = 'plan-result hidden';
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const shift = p.batch.shiftMinutes;
+  const shiftText =
+    shift === 0 ? '批次时间不变' : shift > 0 ? `整体延后 ${shift} 分钟` : `整体提前 ${-shift} 分钟`;
+  const bannerCls = p.changedCount ? 'plan-banner plan-empty' : 'plan-banner plan-ok';
+  const icon = p.changedCount ? '⚠️' : '✅';
+  const title = p.changedCount
+    ? `改期将改变 ${p.changedCount} 个批次的交叉污染`
+    : '改期不改变任何批次的交叉污染';
+
+  const rows = p.batches.map((b) => {
+    const added = b.addedInherited.length
+      ? b.addedInherited.map((a) => `<span class="tag tag-danger">${esc(a)}</span>`).join('')
+      : '<span class="tag tag-muted">无</span>';
+    const removed = b.removedInherited.length
+      ? b.removedInherited.map((a) => `<span class="tag tag-clean">${esc(a)}</span>`).join('')
+      : '<span class="tag tag-muted">无</span>';
+    const finalTags = b.afterFinal.length
+      ? b.afterFinal
+          .map((a) =>
+            `<span class="tag ${b.recipeAllergens.includes(a) ? 'tag-recipe' : 'tag-inherit'}">${esc(a)}</span>`
+          )
+          .join('')
+      : '<span class="tag tag-muted">（无过敏原）</span>';
+    return `<tr${b.changed ? ' class="row-changed"' : ''}>
+      <td class="plan-batch-name">${b.isRescheduled ? '📅 ' : ''}${esc(b.name)}</td>
+      <td>${added}</td>
+      <td>${removed}</td>
+      <td>${finalTags}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.className = 'plan-result';
+  wrap.innerHTML = `
+    <div class="${bannerCls}"><b>${icon} ${title}</b>
+      <div>批次「${esc(p.batch.name)}」：${fmtTime(p.batch.fromTime)} → ${fmtTime(p.batch.toTime)}（${shiftText}）</div>
+    </div>
+    <div class="plan-block">
+      <div class="plan-block-title">逐批对比（📅 为被改期批次）</div>
+      <table class="plan-table">
+        <thead><tr><th>批次</th><th>新增交叉污染</th><th>消失交叉污染</th><th>改期后最终过敏原</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="hint">该预览仅为试算结果，原始批次与清洗记录未发生任何写入或修改。</p>`;
+}
+
 /* ================= 设备管理 ================= */
 
 function editEquipment(id) {
@@ -863,6 +970,8 @@ function renderAll() {
   renderCleaningFormParts();
   // 清洗规划区同步刷新；记录变更后上次规划结果自动失效
   renderPlannerParts();
+  // 改期预览区同步刷新；记录变更后上次预览结果自动失效
+  renderRescheduleParts();
 }
 
 /* ================= 演示数据 / 重推演 ================= */

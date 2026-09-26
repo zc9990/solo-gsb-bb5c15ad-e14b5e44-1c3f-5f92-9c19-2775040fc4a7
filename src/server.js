@@ -6,6 +6,7 @@ const express = require('express');
 const { JsonStore, newId } = require('./store');
 const { trace } = require('./trace');
 const { planCleaning } = require('./planner');
+const { previewReschedule } = require('./reschedule');
 const { buildDemoData } = require('./demo');
 const {
   HttpError,
@@ -13,6 +14,7 @@ const {
   normalizeBatchInput,
   normalizeCleaningInput,
   normalizeCleaningPlanInput,
+  normalizeRescheduleInput,
   knownAllergens,
 } = require('./validation');
 
@@ -191,6 +193,18 @@ app.post('/api/cleaning-plans', (req, res, next) => {
     const data = store.read();
     const input = normalizeCleaningPlanInput(req.body || {}, data);
     res.json({ plan: planCleaning(data, input) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- 批次改期预览（只读试算，绝不写入或修改原始记录） ---------------------
+
+app.post('/api/reschedule-preview', (req, res, next) => {
+  try {
+    const data = store.read();
+    const input = normalizeRescheduleInput(req.body || {}, data);
+    res.json({ preview: previewReschedule(data, input) });
   } catch (err) {
     next(err);
   }

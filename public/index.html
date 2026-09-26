@@ -76,6 +76,31 @@
           <div id="plan-result" class="plan-result hidden"></div>
         </div>
 
+        <h2 class="section-title">📅 批次改期影响预览（只读试算，不会改动任何记录）</h2>
+        <div class="form-card plan-card">
+          <p class="hint">
+            选择一个<b>现有批次</b>并输入<b>新的批次时间</b>：系统按原批次时间与新时间的分钟差，
+            平移该批次所有<b>填写了时间</b>的设备步骤（留空步骤继续沿用新批次时间），
+            其他批次与清洗记录保持原样，随后复用上方推演规则（先继承后留渍、同一分钟清洗先于接触）重新推演，
+            逐批对比改期前后<b>新增 / 消失的交叉污染过敏原</b>与<b>改期后的最终过敏原集合</b>。
+          </p>
+          <form id="reschedule-form">
+            <div class="form-row">
+              <label>选择要改期的批次
+                <select id="reschedule-batch" required></select>
+              </label>
+              <label>新的批次时间
+                <input type="datetime-local" id="reschedule-time" required step="60" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="reschedule-run">预览改期影响</button>
+              <button type="button" class="btn" id="reschedule-reset">清空结果</button>
+            </div>
+          </form>
+          <div id="reschedule-result" class="plan-result hidden"></div>
+        </div>
+
         <h2 class="section-title">🧰 设备最终残留</h2>
         <div id="equipment-results" class="card-grid"></div>
       </div>

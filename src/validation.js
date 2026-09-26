@@ -194,6 +194,16 @@ function normalizeCleaningPlanInput(body, data) {
   return { allergen, batchIds, candidates };
 }
 
+/** 校验并规范化批次改期预览入参（只读试算，不落库）。 */
+function normalizeRescheduleInput(body, data) {
+  const batchId = cleanText(body && body.batchId, '批次 ID', 100);
+  if (!data.batches.some((b) => b.id === batchId)) {
+    throw new HttpError(404, '批次不存在');
+  }
+  const newTime = parseLocalTime(body && body.newTime, '新的批次时间');
+  return { batchId, newTime };
+}
+
 module.exports = {
   HttpError,
   parseLocalTime,
@@ -202,5 +212,6 @@ module.exports = {
   normalizeBatchInput,
   normalizeCleaningInput,
   normalizeCleaningPlanInput,
+  normalizeRescheduleInput,
   knownAllergens,
 };
