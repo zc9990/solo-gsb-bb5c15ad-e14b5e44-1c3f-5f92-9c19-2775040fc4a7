@@ -44,6 +44,33 @@
         <h2 class="section-title">📦 各批最终过敏原</h2>
         <div id="batch-results" class="card-grid"></div>
 
+        <h2 class="section-title">🗓️ 批次改期影响预览（只读试算，不会改动任何记录）</h2>
+        <div class="form-card plan-card">
+          <p class="hint">
+            选择一个<b>现有批次</b>并输入<b>新的批次时间</b>：该批次中<b>填写了时间的设备步骤</b>会按
+            「新批次时间 − 原批次时间」的<b>分钟差整体平移</b>；<b>留空步骤</b>继续沿用新批次时间；
+            <b>其他批次与全部清洗记录保持原样</b>。系统在内存中复用现有推演，比较改期前后所有批次的结果，
+            逐批列出<b>新增 / 消失的交叉污染过敏原</b>与<b>改期后的最终过敏原集合</b>（同一分钟仍按清洗先于接触处理）。
+            预览不会写入或修改任何原始记录。
+          </p>
+          <form id="reschedule-form">
+            <div class="form-row">
+              <label>选择批次
+                <select id="reschedule-batch" required></select>
+              </label>
+              <label>新的批次时间
+                <input type="datetime-local" id="reschedule-time" required step="60" />
+              </label>
+            </div>
+            <p id="reschedule-summary" class="hint"></p>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="reschedule-run">生成改期预览</button>
+              <button type="button" class="btn" id="reschedule-reset">清空重选</button>
+            </div>
+          </form>
+          <div id="reschedule-result" class="plan-result hidden"></div>
+        </div>
+
         <h2 class="section-title">🧹 清洗规划（只读试算，不会改动任何记录）</h2>
         <div class="form-card plan-card">
           <p class="hint">

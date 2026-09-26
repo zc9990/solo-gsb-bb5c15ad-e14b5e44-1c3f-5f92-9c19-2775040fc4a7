@@ -312,6 +312,8 @@ details.source-details[open] > summary::before { content: "▾"; }
 .plan-batch-name { white-space: nowrap; font-weight: 600; }
 .plan-batch-time { font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 2px; }
 .plan-arrow { color: var(--muted); text-align: center; width: 24px; }
+.rs-table .rs-target-row { background: #eff6ff; }
+.rs-table td { vertical-align: top; }
 
 /* ---------- toast ---------- */
 .toast {

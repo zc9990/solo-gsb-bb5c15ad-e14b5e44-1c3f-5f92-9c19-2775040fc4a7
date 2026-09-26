@@ -194,6 +194,22 @@ function normalizeCleaningPlanInput(body, data) {
   return { allergen, batchIds, candidates };
 }
 
+/** 校验并规范化批次改期预览入参（只读试算，不落库）。 */
+function normalizeRescheduleInput(body, data) {
+  if (!body || typeof body !== 'object') {
+    throw new HttpError(400, '请求体必须是 JSON 对象');
+  }
+  const batchId = cleanText(body.batchId, '批次 ID', 100);
+  if (!data.batches.some((b) => b.id === batchId)) {
+    throw new HttpError(400, '选择的批次不存在，请重新选择一个现有批次');
+  }
+  if (body.newTime === undefined || body.newTime === null || `${body.newTime}`.trim() === '') {
+    throw new HttpError(400, '请输入新的批次时间');
+  }
+  const newTime = parseLocalTime(body.newTime, '新批次时间');
+  return { batchId, newTime };
+}
+
 module.exports = {
   HttpError,
   parseLocalTime,
@@ -202,5 +218,6 @@ module.exports = {
   normalizeBatchInput,
   normalizeCleaningInput,
   normalizeCleaningPlanInput,
+  normalizeRescheduleInput,
   knownAllergens,
 };
